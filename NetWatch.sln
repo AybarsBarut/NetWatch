@@ -1,0 +1,31 @@
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetWatch.Core", "src\NetWatch.Core\NetWatch.Core.csproj", "{8510A7CB-BE54-466C-A8FE-75222DAB6F7D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetWatch.Console", "src\NetWatch.Console\NetWatch.Console.csproj", "{8FCA6619-F9AD-4218-B14C-3E651B9A2CF9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetWatch.Tests", "src\NetWatch.Tests\NetWatch.Tests.csproj", "{7D77E840-D51C-42BD-9314-85465E839A0A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8510A7CB-BE54-466C-A8FE-75222DAB6F7D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8510A7CB-BE54-466C-A8FE-75222DAB6F7D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8510A7CB-BE54-466C-A8FE-75222DAB6F7D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8510A7CB-BE54-466C-A8FE-75222DAB6F7D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8FCA6619-F9AD-4218-B14C-3E651B9A2CF9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8FCA6619-F9AD-4218-B14C-3E651B9A2CF9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8FCA6619-F9AD-4218-B14C-3E651B9A2CF9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8FCA6619-F9AD-4218-B14C-3E651B9A2CF9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7D77E840-D51C-42BD-9314-85465E839A0A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7D77E840-D51C-42BD-9314-85465E839A0A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7D77E840-D51C-42BD-9314-85465E839A0A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7D77E840-D51C-42BD-9314-85465E839A0A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

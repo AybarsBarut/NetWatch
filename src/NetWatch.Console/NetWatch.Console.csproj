@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>netwatch</AssemblyName>
+    <RootNamespace>NetWatch.ConsoleApp</RootNamespace>
+    <Version>0.1.0</Version>
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <InvariantGlobalization>false</InvariantGlobalization>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../NetWatch.Core/NetWatch.Core.csproj" />
+    <PackageReference Include="Spectre.Console" />
+    <PackageReference Include="System.CommandLine" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(PublishTrimmed)' == 'true'">
+    <TrimmerRootAssembly Include="PacketDotNet" />
+    <TrimmerRootAssembly Include="SharpPcap" />
+  </ItemGroup>
+  <PropertyGroup Condition="'$(PublishTrimmed)' == 'true'">
+    <!-- PacketDotNet LazySlim<T> has an unannotated Activator path; the rooted assembly keeps its constructors. -->
+    <NoWarn>$(NoWarn);IL2091;IL2104</NoWarn>
+  </PropertyGroup>
+</Project>
