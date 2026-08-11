@@ -8,18 +8,11 @@ if ($Repository -notmatch '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$') {
     throw 'NETWATCH_REPOSITORY owner/repository biçiminde olmalıdır.'
 }
 
-$InstallerUrl = "https://raw.githubusercontent.com/$Repository/main/install.ps1"
 $ReleaseBaseUrl = "https://github.com/$Repository/releases/latest/download"
 $InstallDirectory = Join-Path $env:LOCALAPPDATA 'NetWatch'
 $ExecutablePath = Join-Path $InstallDirectory 'netwatch.exe'
 $NpcapVersion = '1.88'
 $NpcapUrl = "https://npcap.com/dist/npcap-$NpcapVersion.exe"
-
-function Test-Administrator {
-    $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
-    $principal = [Security.Principal.WindowsPrincipal]::new($identity)
-    return $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
-}
 
 function Test-Npcap {
     return $null -ne (Get-Service -Name 'npcap' -ErrorAction SilentlyContinue)
@@ -44,7 +37,13 @@ function Install-NpcapInteractive {
         }
 
         Write-Host 'Npcap kurucusu açılıyor. Kurulum sihirbazını tamamlayın...' -ForegroundColor Cyan
-        $process = Start-Process -FilePath $installerPath -Wait -PassThru
+        try {
+            $process = Start-Process -FilePath $installerPath -Wait -PassThru
+        }
+        catch {
+            throw 'Npcap kurucusu başlatılamadı. PowerShell penceresini yönetici olarak açıp kurulumu yeniden deneyin.'
+        }
+
         if ($process.ExitCode -ne 0 -or -not (Test-Npcap)) {
             throw "Npcap kurulumu tamamlanamadı (çıkış kodu: $($process.ExitCode))."
         }
@@ -52,22 +51,6 @@ function Install-NpcapInteractive {
     finally {
         Remove-Item -LiteralPath $installerPath -Force -ErrorAction SilentlyContinue
     }
-}
-
-if (-not (Test-Administrator)) {
-    if ($env:NETWATCH_INSTALL_ELEVATED -eq '1') {
-        throw 'Kurulum yönetici izni alamadı.'
-    }
-
-    Write-Host 'Kurulum yönetici izni istiyor...' -ForegroundColor Cyan
-    $escapedUrl = $InstallerUrl.Replace("'", "''")
-    $command = "`$env:NETWATCH_INSTALL_ELEVATED='1'; irm '$escapedUrl' | iex"
-    Start-Process -FilePath 'powershell.exe' -Verb RunAs -ArgumentList @(
-        '-NoProfile',
-        '-ExecutionPolicy', 'Bypass',
-        '-Command', $command
-    )
-    return
 }
 
 if (-not (Test-Npcap)) {

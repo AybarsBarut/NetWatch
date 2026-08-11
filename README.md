@@ -26,7 +26,7 @@ PowerShell'i açın ve çalıştırın:
 irm https://raw.githubusercontent.com/AybarsBarut/WireSniffer/main/install.ps1 | iex
 ```
 
-Kurucu yönetici izni ister, Npcap yoksa açık onayınızdan sonra resmi ve imzalı Npcap kurucusunu çalıştırır, son yayın ikilisinin SHA256 değerini doğrular ve NetWatch'ı kullanıcı PATH'inize ekler.
+Kurucu Npcap yoksa açık onayınızdan sonra resmi ve imzalı Npcap kurucusunu çalıştırır; yalnızca sürücü kurulumu sırasında Windows yönetici izni isteyebilir. Son yayın ikilisinin SHA256 değerini doğrular ve NetWatch'ı kullanıcı PATH'inize ekler.
 
 Ücretsiz Npcap sürümü lisansı gereği sessiz kurulamaz. Kurulum sihirbazı bu nedenle ekranda gösterilir. Kurumsal sessiz dağıtım için Npcap OEM lisansı gerekir.
 
