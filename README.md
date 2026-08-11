@@ -82,6 +82,10 @@ dotnet publish src/NetWatch.Console -c Release -r win-x64 --self-contained true 
 
 Mimari ayrıntılar için [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) dosyasına bakın.
 
+## Yayınlama
+
+Sürümler yerel olarak derlenir ve doğrulanır. `netwatch.exe` ile `netwatch.exe.sha256` dosyaları, sürüm etiketi oluşturulduktan sonra GitHub Release'e manuel olarak yüklenir. Bu depoda GitHub Actions kullanılmaz.
+
 ## Katkı sağlama
 
 1. Küçük ve tek amaçlı bir dal açın.
