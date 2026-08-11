@@ -8,7 +8,7 @@ if ($Repository -notmatch '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$') {
     throw 'NETWATCH_REPOSITORY owner/repository biçiminde olmalıdır.'
 }
 
-$ReleaseBaseUrl = "https://github.com/$Repository/releases/latest/download"
+$LatestReleaseApiUrl = "https://api.github.com/repos/$Repository/releases/latest"
 $InstallDirectory = Join-Path $env:LOCALAPPDATA 'NetWatch'
 $ExecutablePath = Join-Path $InstallDirectory 'netwatch.exe'
 $NpcapVersion = '1.88'
@@ -62,9 +62,16 @@ $downloadPath = Join-Path ([IO.Path]::GetTempPath()) "netwatch-$PID.exe"
 $checksumPath = "$downloadPath.sha256"
 
 try {
-    Write-Host 'NetWatch indiriliyor...' -ForegroundColor Cyan
-    Invoke-WebRequest -Uri "$ReleaseBaseUrl/netwatch.exe" -OutFile $downloadPath -UseBasicParsing
-    Invoke-WebRequest -Uri "$ReleaseBaseUrl/netwatch.exe.sha256" -OutFile $checksumPath -UseBasicParsing
+    $release = Invoke-RestMethod -Uri $LatestReleaseApiUrl -Headers @{ 'User-Agent' = 'NetWatch-Installer' }
+    $executableAssets = @($release.assets | Where-Object { $_.name -eq 'netwatch.exe' })
+    $checksumAssets = @($release.assets | Where-Object { $_.name -eq 'netwatch.exe.sha256' })
+    if ($executableAssets.Count -ne 1 -or $checksumAssets.Count -ne 1) {
+        throw 'Son GitHub sürümünde gerekli NetWatch dosyaları bulunamadı.'
+    }
+
+    Write-Host "NetWatch $($release.tag_name) indiriliyor..." -ForegroundColor Cyan
+    Invoke-WebRequest -Uri $executableAssets[0].browser_download_url -OutFile $downloadPath -UseBasicParsing
+    Invoke-WebRequest -Uri $checksumAssets[0].browser_download_url -OutFile $checksumPath -UseBasicParsing
 
     $checksumText = (Get-Content -LiteralPath $checksumPath -Raw).Trim()
     if ($checksumText -notmatch '(?i)^([a-f0-9]{64})(?:\s+\*?netwatch\.exe)?$') {
