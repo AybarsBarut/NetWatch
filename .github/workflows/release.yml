@@ -1,0 +1,54 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Test
+        run: dotnet test NetWatch.sln -c Release
+
+      - name: Publish Windows x64
+        run: >-
+          dotnet publish src/NetWatch.Console/NetWatch.Console.csproj
+          -c Release
+          -r win-x64
+          --self-contained true
+          -p:PublishSingleFile=true
+          -p:PublishTrimmed=true
+          -o artifacts/release
+
+      - name: Create SHA256 checksum
+        shell: pwsh
+        run: |
+          $hash = (Get-FileHash artifacts/release/netwatch.exe -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  netwatch.exe" | Set-Content artifacts/release/netwatch.exe.sha256 -Encoding ascii
+          "NETWATCH_SHA256=$hash" | Out-File $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/release/netwatch.exe
+            artifacts/release/netwatch.exe.sha256
+          body: |
+            Windows x64 için tek dosya, self-contained NetWatch sürümü.
+
+            SHA256: `${{ env.NETWATCH_SHA256 }}`
+          generate_release_notes: true
