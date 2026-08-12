@@ -1,13 +1,13 @@
-# NetWatch
+# netwatch
 
-NetWatch, Windows terminalinde canlı paket ve trafik görünümü sağlayan açık kaynak bir ağ tanılama aracıdır. Npcap üzerinden paketleri yakalar; Ethernet, ARP, IPv4/IPv6, TCP, UDP, ICMP, DNS, şifresiz HTTP ve TLS ClientHello/SNI bilgilerini tek bir tabloda özetler. Belirli bir cihazı IP ile izleyebilir, temel anomali işaretleri üretebilir ve yakalamayı pcap, Markdown veya AI agentlarına uygun JSONL oturumu olarak kaydedebilir.
+**netwatch**, Windows terminalinde canlı paket ve trafik görünümü sağlayan açık kaynak bir ağ tanılama aracıdır. Projenin ve komut satırı uygulamasının adı `netwatch`'tır. Npcap üzerinden paketleri yakalar; Ethernet, ARP, IPv4/IPv6, TCP, UDP, ICMP, DNS, şifresiz HTTP ve TLS ClientHello/SNI bilgilerini tek bir tabloda özetler. Belirli bir cihazı IP ile izleyebilir, temel anomali işaretleri üretebilir ve yakalamayı pcap, Markdown veya AI agentlarına uygun JSONL oturumu olarak kaydedebilir.
 
 > [!WARNING]
-> NetWatch yalnızca sahibi olduğunuz cihazlarda ve açıkça yetkilendirildiğiniz ağlarda tanılama amacıyla kullanılmalıdır. Başkalarına ait trafiği izinsiz yakalamak bulunduğunuz ülkede yasa dışı olabilir. Karışık mod varsayılan olarak kapalıdır ve `--promiscuous` ile bilinçli olarak açılmalıdır.
+> netwatch yalnızca sahibi olduğunuz cihazlarda ve açıkça yetkilendirildiğiniz ağlarda tanılama amacıyla kullanılmalıdır. Başkalarına ait trafiği izinsiz yakalamak bulunduğunuz ülkede yasa dışı olabilir. Karışık mod varsayılan olarak kapalıdır ve `--promiscuous` ile bilinçli olarak açılmalıdır.
 
-## Neden NetWatch?
+## Neden netwatch?
 
-| Özellik | NetWatch | Wireshark |
+| Özellik | netwatch | Wireshark |
 |---|---:|---:|
 | Terminalde canlı paket listesi | Evet | TShark ile |
 | Tek komutla kurulum | Evet | Hayır |
@@ -18,17 +18,17 @@ NetWatch, Windows terminalinde canlı paket ve trafik görünümü sağlayan aç
 | Wireshark uyumlu pcap kaydı | Evet | Evet |
 | Derin protokol analizi ve GUI | Sınırlı | Evet |
 
-NetWatch, hızlı terminal tanılaması için tasarlanmıştır; Wireshark'ın bütün dissector ve inceleme özelliklerinin yerini almayı amaçlamaz.
+netwatch, hızlı terminal tanılaması için tasarlanmıştır; Wireshark'ın bütün dissector ve inceleme özelliklerinin yerini almayı amaçlamaz.
 
 ## Hızlı başlangıç
 
 PowerShell'i açın ve çalıştırın:
 
 ```powershell
-irm https://github.com/AybarsBarut/WireSniffer/raw/refs/heads/main/install.ps1 | iex
+irm https://github.com/AybarsBarut/NetWatch/raw/refs/heads/main/install.ps1 | iex
 ```
 
-Kurucu Npcap yoksa açık onayınızdan sonra resmi ve imzalı Npcap kurucusunu çalıştırır; yalnızca sürücü kurulumu sırasında Windows yönetici izni isteyebilir. Son yayın ikilisinin SHA256 değerini doğrular ve NetWatch'ı kullanıcı PATH'inize ekler.
+Kurucu Npcap yoksa açık onayınızdan sonra resmi ve imzalı Npcap kurucusunu çalıştırır; yalnızca sürücü kurulumu sırasında Windows yönetici izni isteyebilir. Son yayın ikilisinin SHA256 değerini doğrular ve `netwatch` uygulamasını kullanıcı PATH'inize ekler.
 
 Ücretsiz Npcap sürümü lisansı gereği sessiz kurulamaz. Kurulum sihirbazı bu nedenle ekranda gösterilir. Kurumsal sessiz dağıtım için Npcap OEM lisansı gerekir.
 
@@ -69,7 +69,7 @@ Yakalamayı `Ctrl+C` ile durdurabilirsiniz. BPF ifadeleri libpcap tarafından de
 
 ## HTTP ve anomali görünümü
 
-NetWatch, tek TCP segmentinde tam başlığı bulunan şifresiz HTTP/1.x istek ve yanıtlarını çözümler. Metot, hedef, Host, durum kodu ve başlıklar JSONL/Markdown çıktısına eklenir. `Authorization`, `Cookie`, `Set-Cookie`, `Proxy-Authorization`, `X-Api-Key` ve `X-Auth-Token` değerleri her zaman `[REDACTED]` olarak yazılır. Gövde kaydı varsayılan olarak kapalıdır ve yalnızca `--include-http-body` ile açılır. TLS içeriği çözülmez.
+netwatch, tek TCP segmentinde tam başlığı bulunan şifresiz HTTP/1.x istek ve yanıtlarını çözümler. Metot, hedef, Host, durum kodu ve başlıklar JSONL/Markdown çıktısına eklenir. `Authorization`, `Cookie`, `Set-Cookie`, `Proxy-Authorization`, `X-Api-Key` ve `X-Auth-Token` değerleri her zaman `[REDACTED]` olarak yazılır. Gövde kaydı varsayılan olarak kapalıdır ve yalnızca `--include-http-body` ile açılır. TLS içeriği çözülmez.
 
 İzlenen cihaz için aşağıdaki deterministik işaretler üretilir:
 
@@ -106,7 +106,7 @@ Oturum klasörü yeni veya boş olmalıdır; mevcut bir oturumun üzerine yazıl
 
 ## Npcap neden gerekli?
 
-Windows, genel amaçlı kullanıcı uygulamalarına bütün bağlantı katmanı paketlerini doğrudan sunmaz. Npcap imzalı bir Windows sürücüsü ve libpcap uyumlu API sağlayarak BPF filtreleme, loopback yakalama ve pcap uyumluluğunu mümkün kılar. NetWatch karışık modu varsayılan olarak kullanmaz.
+Windows, genel amaçlı kullanıcı uygulamalarına bütün bağlantı katmanı paketlerini doğrudan sunmaz. Npcap imzalı bir Windows sürücüsü ve libpcap uyumlu API sağlayarak BPF filtreleme, loopback yakalama ve pcap uyumluluğunu mümkün kılar. netwatch karışık modu varsayılan olarak kullanmaz.
 
 `--mode etw` yolu gelecekte sürücüsüz metadata yakalama için ayrılmıştır. Mevcut önizlemede arayüz keşfi çalışır; canlı ham paket görünümü için `--mode npcap` gerekir.
 
@@ -138,4 +138,4 @@ Paket yakalama kodunda varsayılan izinleri genişleten, kullanıcı onayını a
 
 ## Lisanslar
 
-NetWatch MIT lisanslıdır. SharpPcap MIT, PacketDotNet MPL-2.0 ve Spectre.Console MIT lisanslıdır. Npcap ayrı bir üründür ve kendi kullanım/dağıtım lisansına tabidir; bu depo Npcap ikilisini barındırmaz.
+netwatch MIT lisanslıdır. SharpPcap MIT, PacketDotNet MPL-2.0 ve Spectre.Console MIT lisanslıdır. Npcap ayrı bir üründür ve kendi kullanım/dağıtım lisansına tabidir; bu depo Npcap ikilisini barındırmaz.
