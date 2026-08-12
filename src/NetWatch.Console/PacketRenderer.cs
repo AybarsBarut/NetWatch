@@ -1,5 +1,7 @@
 using NetWatch.Core.Parsing;
+using NetWatch.Core.Storage;
 using Spectre.Console;
+using System.Text.Json;
 
 namespace NetWatch.ConsoleApp;
 
@@ -16,7 +18,19 @@ internal static class PacketRenderer
             Console.WriteLine(
                 $"{packet.Number,7} {packet.Timestamp:HH:mm:ss.ffffff} " +
                 $"{packet.Source,-30} {packet.Destination,-30} " +
-                $"{packet.Protocol,-8} {packet.Length,7} {packet.Summary}");
+                $"{packet.Protocol,-8} {packet.Length,7} {packet.Summary}" +
+                FormatAnomalies(packet));
+        }
+    }
+
+    public static async Task RenderJsonLinesAsync(
+        IAsyncEnumerable<PacketInfo> packets,
+        CancellationToken cancellationToken)
+    {
+        await foreach (var packet in packets.WithCancellation(cancellationToken).ConfigureAwait(false))
+        {
+            var packetEvent = PacketEvent.FromPacket(packet);
+            Console.WriteLine(JsonSerializer.Serialize(packetEvent, NetWatchJsonContext.Default.PacketEvent));
         }
     }
 
@@ -74,7 +88,7 @@ internal static class PacketRenderer
                 Markup.Escape(packet.Destination),
                 ColorProtocol(packet.Protocol),
                 packet.Length.ToString(),
-                Markup.Escape(packet.Summary));
+                Markup.Escape(packet.Summary) + ColorAnomalyCount(packet));
         }
 
         return table;
@@ -85,9 +99,18 @@ internal static class PacketRenderer
         "TCP" => "[deepskyblue1]TCP[/]",
         "UDP" => "[mediumpurple2]UDP[/]",
         "DNS" => "[springgreen2]DNS[/]",
+        "HTTP" => "[cyan1]HTTP[/]",
         "TLS" => "[gold1]TLS[/]",
         "ARP" => "[orange3]ARP[/]",
         "MALFORMED" => "[red]MALFORMED[/]",
         _ => Markup.Escape(protocol)
     };
+
+    private static string FormatAnomalies(PacketInfo packet) => packet.Anomalies is { Count: > 0 }
+        ? $" ANOMALY={string.Join(',', packet.Anomalies.Select(item => item.Code))}"
+        : string.Empty;
+
+    private static string ColorAnomalyCount(PacketInfo packet) => packet.Anomalies is { Count: > 0 }
+        ? $" [red]⚠ {packet.Anomalies.Count}[/]"
+        : string.Empty;
 }
