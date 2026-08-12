@@ -1,3 +1,5 @@
+using NetWatch.Core.Analysis;
+
 namespace NetWatch.Core.Parsing;
 
 public sealed record PacketInfo(
@@ -8,4 +10,10 @@ public sealed record PacketInfo(
     string Protocol,
     int Length,
     string Summary,
-    byte[] RawData);
+    byte[] RawData,
+    string? SourceAddress = null,
+    string? DestinationAddress = null,
+    ushort? SourcePort = null,
+    ushort? DestinationPort = null,
+    HttpMessage? Http = null,
+    IReadOnlyList<AnomalyFinding>? Anomalies = null);

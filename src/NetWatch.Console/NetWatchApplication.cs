@@ -1,7 +1,9 @@
 using NetWatch.Core.Capture;
+using NetWatch.Core.Analysis;
 using NetWatch.Core.Parsing;
 using NetWatch.Core.Storage;
 using Spectre.Console;
+using System.Net;
 
 namespace NetWatch.ConsoleApp;
 
@@ -11,6 +13,11 @@ internal static class NetWatchApplication
     {
         try
         {
+            if (appOptions.Plain && appOptions.JsonLines)
+            {
+                throw new ArgumentException("--plain ve --jsonl birlikte kullanılamaz.");
+            }
+
             await using var provider = CreateProvider(appOptions.Mode);
             var interfaces = provider.GetInterfaces();
 
@@ -27,8 +34,19 @@ internal static class NetWatchApplication
             }
 
             var selected = SelectInterface(interfaces, appOptions.Interface);
-            var filter = BpfFilter.Normalize(appOptions.Filter);
+            string? watchedIp = null;
+            if (!string.IsNullOrWhiteSpace(appOptions.WatchIp))
+            {
+                if (!IPAddress.TryParse(appOptions.WatchIp, out var parsedWatchedIp))
+                {
+                    throw new ArgumentException("--watch-ip geçerli bir IPv4 veya IPv6 adresi olmalıdır.");
+                }
+
+                watchedIp = parsedWatchedIp.ToString();
+            }
+            var filter = BpfFilter.CombineWithHost(appOptions.Filter, watchedIp);
             var captureOptions = new CaptureOptions(selected.Id, filter, appOptions.Promiscuous);
+            var trafficFilter = new TrafficFilter(appOptions.Protocols);
 
             using var stopSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             ConsoleCancelEventHandler cancelHandler = (_, eventArgs) =>
@@ -40,19 +58,67 @@ internal static class NetWatchApplication
 
             try
             {
-                AnsiConsole.MarkupLine(
-                    $"[grey]Arayüz:[/] [cyan]{Markup.Escape(selected.Description)}[/]  " +
-                    $"[grey]Mod:[/] [cyan]{provider.Mode}[/]  " +
-                    $"[grey]Filtre:[/] [cyan]{Markup.Escape(filter ?? "yok")}[/]");
-                AnsiConsole.MarkupLine("[grey]Durdurmak için Ctrl+C.[/]\n");
+                WriteStatus(
+                    appOptions.JsonLines,
+                    $"Arayüz: {selected.Description}  Mod: {provider.Mode}  Filtre: {filter ?? "yok"}");
+                WriteStatus(appOptions.JsonLines, "Durdurmak için Ctrl+C.");
+
+                if (appOptions.IncludeHttpBody)
+                {
+                    WriteStatus(
+                        appOptions.JsonLines,
+                        $"UYARI: HTTP gövde önizlemesi açık ({appOptions.MaximumHttpBodyBytes} bayta kadar); hassas veri içerebilir.");
+                }
 
                 await using var writer = appOptions.SaveFile is null
                     ? null
                     : new PcapWriter(appOptions.SaveFile.FullName);
 
-                var parser = new PacketParser();
-                var stream = ReadPacketsAsync(provider, captureOptions, parser, writer, appOptions.MaxPackets, stopSource.Token);
-                if (appOptions.Plain || Console.IsOutputRedirected)
+                var metadata = new CaptureSessionMetadata(
+                    "1.0",
+                    DateTimeOffset.UtcNow,
+                    provider.Mode,
+                    selected.Id,
+                    selected.Description,
+                    filter,
+                    watchedIp,
+                    appOptions.Protocols,
+                    appOptions.IncludeHttpBody,
+                    "Bu dosyalar ağ uç noktaları ve şifresiz uygulama verileri içerebilir. Yalnızca yetkili tanılama kapsamında paylaşın.");
+                var agentTrafficPath = appOptions.AgentSessionDirectory is null
+                    ? null
+                    : Path.GetFullPath(Path.Combine(appOptions.AgentSessionDirectory.FullName, "traffic.md"));
+                var separateMarkdownPath = appOptions.MarkdownLog?.FullName;
+                var markdownDuplicatesAgentLog = separateMarkdownPath is not null && agentTrafficPath is not null &&
+                    string.Equals(
+                        Path.GetFullPath(separateMarkdownPath),
+                        agentTrafficPath,
+                        StringComparison.OrdinalIgnoreCase);
+                await using var markdownWriter = separateMarkdownPath is null || markdownDuplicatesAgentLog
+                    ? null
+                    : new MarkdownTrafficWriter(separateMarkdownPath, metadata);
+                await using var agentWriter = appOptions.AgentSessionDirectory is null
+                    ? null
+                    : new AgentSessionWriter(appOptions.AgentSessionDirectory.FullName, metadata);
+
+                var parser = new PacketParser(appOptions.IncludeHttpBody, appOptions.MaximumHttpBodyBytes);
+                var anomalyDetector = new TrafficAnomalyDetector(watchedIp);
+                var stream = ReadPacketsAsync(
+                    provider,
+                    captureOptions,
+                    parser,
+                    trafficFilter,
+                    anomalyDetector,
+                    writer,
+                    markdownWriter,
+                    agentWriter,
+                    appOptions.MaxPackets,
+                    stopSource.Token);
+                if (appOptions.JsonLines)
+                {
+                    await PacketRenderer.RenderJsonLinesAsync(stream, stopSource.Token).ConfigureAwait(false);
+                }
+                else if (appOptions.Plain || Console.IsOutputRedirected)
                 {
                     await PacketRenderer.RenderPlainAsync(stream, stopSource.Token).ConfigureAwait(false);
                 }
@@ -63,7 +129,17 @@ internal static class NetWatchApplication
 
                 if (appOptions.SaveFile is not null)
                 {
-                    AnsiConsole.MarkupLine($"\n[green]Pcap kaydedildi:[/] {Markup.Escape(appOptions.SaveFile.FullName)}");
+                    WriteStatus(appOptions.JsonLines, $"Pcap kaydedildi: {appOptions.SaveFile.FullName}");
+                }
+
+                if (appOptions.MarkdownLog is not null)
+                {
+                    WriteStatus(appOptions.JsonLines, $"Markdown günlüğü: {appOptions.MarkdownLog.FullName}");
+                }
+
+                if (appOptions.AgentSessionDirectory is not null)
+                {
+                    WriteStatus(appOptions.JsonLines, $"Agent oturumu: {appOptions.AgentSessionDirectory.FullName}");
                 }
             }
             finally
@@ -79,12 +155,12 @@ internal static class NetWatchApplication
         }
         catch (CaptureProviderException ex)
         {
-            AnsiConsole.MarkupLine($"[red]Yakalama hatası:[/] {Markup.Escape(ex.Message)}");
+            WriteError(appOptions.JsonLines, $"Yakalama hatası: {ex.Message}");
             return 3;
         }
-        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or IOException or UnauthorizedAccessException)
         {
-            AnsiConsole.MarkupLine($"[red]Hata:[/] {Markup.Escape(ex.Message)}");
+            WriteError(appOptions.JsonLines, $"Hata: {ex.Message}");
             return 4;
         }
     }
@@ -150,11 +226,16 @@ internal static class NetWatchApplication
         ICaptureProvider provider,
         CaptureOptions options,
         IPacketParser parser,
+        TrafficFilter trafficFilter,
+        TrafficAnomalyDetector anomalyDetector,
         PcapWriter? writer,
+        MarkdownTrafficWriter? markdownWriter,
+        AgentSessionWriter? agentWriter,
         int maxPackets,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
     {
         long number = 0;
+        long emitted = 0;
         await foreach (var frame in provider.CaptureAsync(options, cancellationToken).ConfigureAwait(false))
         {
             number++;
@@ -163,11 +244,51 @@ internal static class NetWatchApplication
                 await writer.WriteAsync(frame, cancellationToken).ConfigureAwait(false);
             }
 
-            yield return parser.Parse(number, frame);
-            if (maxPackets > 0 && number >= maxPackets)
+            var packet = parser.Parse(number, frame);
+            if (!trafficFilter.Matches(packet))
+            {
+                continue;
+            }
+
+            packet = anomalyDetector.Analyze(packet);
+            if (markdownWriter is not null)
+            {
+                await markdownWriter.WriteAsync(packet, cancellationToken).ConfigureAwait(false);
+            }
+
+            if (agentWriter is not null)
+            {
+                await agentWriter.WriteAsync(packet, cancellationToken).ConfigureAwait(false);
+            }
+
+            yield return packet;
+            emitted++;
+            if (maxPackets > 0 && emitted >= maxPackets)
             {
                 yield break;
             }
         }
+    }
+
+    private static void WriteStatus(bool useStandardError, string message)
+    {
+        if (useStandardError)
+        {
+            Console.Error.WriteLine(message);
+            return;
+        }
+
+        AnsiConsole.MarkupLine($"[grey]{Markup.Escape(message)}[/]");
+    }
+
+    private static void WriteError(bool useStandardError, string message)
+    {
+        if (useStandardError)
+        {
+            Console.Error.WriteLine(message);
+            return;
+        }
+
+        AnsiConsole.MarkupLine($"[red]{Markup.Escape(message)}[/]");
     }
 }

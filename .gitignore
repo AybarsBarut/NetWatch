@@ -9,3 +9,4 @@ artifacts/
 *.pcap
 *.pcapng
 *.etl
+netwatch-sessions/
