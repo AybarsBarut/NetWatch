@@ -81,6 +81,14 @@ maxPacketsOption.Validators.Add(result =>
         result.AddError("--max-packets negatif olamaz.");
     }
 });
+var checkUpdateOption = new Option<bool>("--check-update")
+{
+    Description = "GitHub'daki son NetWatch sürümünü kontrol eder"
+};
+var updateOption = new Option<bool>("--update")
+{
+    Description = "Yeni sürümü indirir, SHA256 değerini doğrular ve uygulamayı günceller"
+};
 
 rootCommand.Options.Add(listOption);
 rootCommand.Options.Add(interfaceOption);
@@ -97,9 +105,24 @@ rootCommand.Options.Add(jsonLinesOption);
 rootCommand.Options.Add(httpBodyOption);
 rootCommand.Options.Add(httpBodyBytesOption);
 rootCommand.Options.Add(maxPacketsOption);
+rootCommand.Options.Add(checkUpdateOption);
+rootCommand.Options.Add(updateOption);
 
 rootCommand.SetAction(async (parseResult, cancellationToken) =>
 {
+    var checkUpdate = parseResult.GetValue(checkUpdateOption);
+    var update = parseResult.GetValue(updateOption);
+    if (checkUpdate && update)
+    {
+        Console.Error.WriteLine("Hata: --check-update ve --update birlikte kullanılamaz.");
+        return 4;
+    }
+
+    if (checkUpdate || update)
+    {
+        return await GitHubReleaseUpdater.RunAsync(update, cancellationToken).ConfigureAwait(false);
+    }
+
     var options = new AppOptions(
         parseResult.GetValue(listOption),
         parseResult.GetValue(interfaceOption),

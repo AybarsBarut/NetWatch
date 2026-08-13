@@ -61,7 +61,15 @@ netwatch --plain --filter "udp port 53"
 
 # Yetkili bir ağda karışık modu açıkça etkinleştir
 netwatch --promiscuous
+
+# Yeni sürüm olup olmadığını kontrol et
+netwatch --check-update
+
+# Yeni sürüm varsa SHA256 doğrulamasıyla kur
+netwatch --update
 ```
+
+Sürüm kontrolü, kanonik GitHub deposundaki son yayımlanmış release etiketini kullanır. `--update`, yalnızca uzak sürüm yerel sürümden yeniyse `netwatch.exe` ve eşleşen checksum dosyasını indirir; SHA256 ve binary sürümünü doğruladıktan sonra çalışan süreç kapanınca uygulamayı değiştirir. Önceki binary `netwatch.exe.previous` olarak korunur.
 
 Yakalamayı `Ctrl+C` ile durdurabilirsiniz. BPF ifadeleri libpcap tarafından derlenir; örnekler: `tcp`, `udp port 53`, `host 192.0.2.10`, `net 10.0.0.0/8`.
 
@@ -125,7 +133,15 @@ Mimari ayrıntılar için [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) dosyasın
 
 ## Yayınlama
 
-Sürümler yerel olarak derlenir ve doğrulanır. `netwatch.exe` ile `netwatch.exe.sha256` dosyaları, sürüm etiketi oluşturulduktan sonra GitHub Release'e manuel olarak yüklenir. Bu depoda GitHub Actions kullanılmaz.
+Sürümler yerel olarak derlenir ve doğrulanır:
+
+```powershell
+.\scripts\Build-Release.ps1
+```
+
+Betik proje sürümünü okur; restore, Release testleri ve self-contained yayın komutlarını yürütür. Oluşan uygulamanın sürümünü ve belgelenen komut satırı seçeneklerini doğruladıktan sonra `artifacts/v<version>/netwatch.exe` ile `netwatch.exe.sha256` dosyalarını üretir. Aynı sürüm klasörünün üzerine yazmak için `-Force` açıkça verilmelidir.
+
+Bu iki dosya, eşleşen `v<version>` etiketi oluşturulduktan sonra GitHub Release'e manuel olarak yüklenir. Bu depoda GitHub Actions kullanılmaz.
 
 ## Katkı sağlama
 

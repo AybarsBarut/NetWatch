@@ -3,7 +3,7 @@
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 
-$Repository = if ($env:NETWATCH_REPOSITORY) { $env:NETWATCH_REPOSITORY } else { 'AybarsBarut/WireSniffer' }
+$Repository = if ($env:NETWATCH_REPOSITORY) { $env:NETWATCH_REPOSITORY } else { 'AybarsBarut/NetWatch' }
 if ($Repository -notmatch '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$') {
     throw 'NETWATCH_REPOSITORY owner/repository biçiminde olmalıdır.'
 }
