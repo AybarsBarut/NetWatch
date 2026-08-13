@@ -1,126 +1,126 @@
 # netwatch
 
-**netwatch**, Windows terminalinde canlı paket ve trafik görünümü sağlayan açık kaynak bir ağ tanılama aracıdır. Projenin ve komut satırı uygulamasının adı `netwatch`'tır. Npcap üzerinden paketleri yakalar; Ethernet, ARP, IPv4/IPv6, TCP, UDP, ICMP, DNS, şifresiz HTTP ve TLS ClientHello/SNI bilgilerini tek bir tabloda özetler. Belirli bir cihazı IP ile izleyebilir, temel anomali işaretleri üretebilir ve yakalamayı pcap, Markdown veya AI agentlarına uygun JSONL oturumu olarak kaydedebilir.
+**netwatch** is an open-source network diagnostics tool that provides a live packet and traffic view in the Windows terminal. It captures packets through Npcap and summarizes Ethernet, ARP, IPv4/IPv6, TCP, UDP, ICMP, DNS, unencrypted HTTP, and TLS ClientHello/SNI information in a single table. It can monitor a specific device by IP address, produce basic anomaly indicators, and save captures as pcap files, Markdown logs, or JSONL sessions designed for AI agents.
 
 > [!WARNING]
-> netwatch yalnızca sahibi olduğunuz cihazlarda ve açıkça yetkilendirildiğiniz ağlarda tanılama amacıyla kullanılmalıdır. Başkalarına ait trafiği izinsiz yakalamak bulunduğunuz ülkede yasa dışı olabilir. Karışık mod varsayılan olarak kapalıdır ve `--promiscuous` ile bilinçli olarak açılmalıdır.
+> Use netwatch only on devices you own and networks where you have explicit authorization to perform diagnostics. Capturing other people's traffic without permission may be illegal in your jurisdiction. Promiscuous mode is disabled by default and must be explicitly enabled with `--promiscuous`.
 
-## Neden netwatch?
+## Why netwatch?
 
-| Özellik | netwatch | Wireshark |
+| Feature | netwatch | Wireshark |
 |---|---:|---:|
-| Terminalde canlı paket listesi | Evet | TShark ile |
-| Tek komutla kurulum | Evet | Hayır |
-| Tek, self-contained uygulama dosyası | Evet | Hayır |
-| BPF yakalama filtresi | Evet | Evet |
-| IP odaklı izleme ve temel anomali işaretleri | Evet | Filtre/uzman analizi ile |
-| Markdown ve JSONL agent oturumu | Evet | Harici işlemle |
-| Wireshark uyumlu pcap kaydı | Evet | Evet |
-| Derin protokol analizi ve GUI | Sınırlı | Evet |
+| Live packet list in the terminal | Yes | With TShark |
+| One-command installation | Yes | No |
+| Single self-contained executable | Yes | No |
+| BPF capture filters | Yes | Yes |
+| IP-focused monitoring and basic anomaly indicators | Yes | With filters and expert analysis |
+| Markdown and JSONL agent sessions | Yes | Requires external processing |
+| Wireshark-compatible pcap recording | Yes | Yes |
+| Deep protocol analysis and GUI | Limited | Yes |
 
-netwatch, hızlı terminal tanılaması için tasarlanmıştır; Wireshark'ın bütün dissector ve inceleme özelliklerinin yerini almayı amaçlamaz.
+netwatch is designed for fast terminal-based diagnostics. It is not intended to replace Wireshark's full dissector and inspection capabilities.
 
-## Hızlı başlangıç
+## Quick start
 
-PowerShell'i açın ve çalıştırın:
+Open PowerShell and run:
 
 ```powershell
 irm https://github.com/AybarsBarut/NetWatch/raw/refs/heads/main/install.ps1 | iex
 ```
 
-Kurucu Npcap yoksa açık onayınızdan sonra resmi ve imzalı Npcap kurucusunu çalıştırır; yalnızca sürücü kurulumu sırasında Windows yönetici izni isteyebilir. Son yayın ikilisinin SHA256 değerini doğrular ve `netwatch` uygulamasını kullanıcı PATH'inize ekler.
+If Npcap is not installed, the installer asks for confirmation before launching the official signed Npcap installer. Windows administrator approval may be required only while installing the driver. The installer verifies the latest release executable against its SHA256 checksum and adds `netwatch` to your user PATH.
 
-Ücretsiz Npcap sürümü lisansı gereği sessiz kurulamaz. Kurulum sihirbazı bu nedenle ekranda gösterilir. Kurumsal sessiz dağıtım için Npcap OEM lisansı gerekir.
+The free Npcap license does not permit silent installation, so its setup wizard must remain visible. Npcap OEM is required for silent enterprise deployment.
 
-## Kullanım
+## Usage
 
 ```powershell
-# Arayüzleri listele
+# List available interfaces
 netwatch --list-interfaces
 
-# Arayüzü etkileşimli seçip yakalamayı başlat
+# Select an interface interactively and start capturing
 netwatch
 
-# Belirli arayüzde HTTPS trafiğini göster
+# Show HTTPS traffic on a specific interface
 netwatch --interface 1 --filter "tcp port 443"
 
-# Bir ana bilgisayara ait trafiği pcap olarak kaydet
+# Record traffic for a host in pcap format
 netwatch --filter "host 8.8.8.8" --save capture.pcap
 
-# Bir prototip cihazın trafiğini izle, HTTP isteklerini filtrele ve Markdown logla
+# Monitor a prototype device, filter HTTP traffic, and write a Markdown log
 netwatch --watch-ip 192.168.1.42 --protocol HTTP --markdown-log prototype-debug.md --plain
 
-# Agentın canlı okuyabileceği bir tanılama oturumu oluştur
+# Create a diagnostics session that an AI agent can follow live
 netwatch --watch-ip 192.168.1.42 --agent-session netwatch-sessions/prototype-01 --plain
 
-# HTTP JSON/form gövdelerini en fazla 8 KiB göster (hassas veri riski vardır)
+# Include up to 8 KiB of HTTP JSON/form bodies; this may expose sensitive data
 netwatch --watch-ip 192.168.1.42 --protocol HTTP --include-http-body --http-body-bytes 8192 --jsonl
 
-# Satır tabanlı çıktı (log/pipeline kullanımı)
+# Use line-oriented output for logs and pipelines
 netwatch --plain --filter "udp port 53"
 
-# Yetkili bir ağda karışık modu açıkça etkinleştir
+# Explicitly enable promiscuous mode on an authorized network
 netwatch --promiscuous
 
-# Yeni sürüm olup olmadığını kontrol et
+# Check whether a newer release is available
 netwatch --check-update
 
-# Yeni sürüm varsa SHA256 doğrulamasıyla kur
+# Download and install a newer release after SHA256 verification
 netwatch --update
 ```
 
-Sürüm kontrolü, kanonik GitHub deposundaki son yayımlanmış release etiketini kullanır. `--update`, yalnızca uzak sürüm yerel sürümden yeniyse `netwatch.exe` ve eşleşen checksum dosyasını indirir; SHA256 ve binary sürümünü doğruladıktan sonra çalışan süreç kapanınca uygulamayı değiştirir. Önceki binary `netwatch.exe.previous` olarak korunur.
+Update checks use the latest published release from the canonical GitHub repository. `--update` downloads `netwatch.exe` and its matching checksum only when the remote version is newer. It verifies both the SHA256 checksum and embedded binary version, then replaces the executable after the running process exits. The previous executable is retained as `netwatch.exe.previous`.
 
-Yakalamayı `Ctrl+C` ile durdurabilirsiniz. BPF ifadeleri libpcap tarafından derlenir; örnekler: `tcp`, `udp port 53`, `host 192.0.2.10`, `net 10.0.0.0/8`.
+Press `Ctrl+C` to stop a capture. BPF expressions are compiled by libpcap. Examples include `tcp`, `udp port 53`, `host 192.0.2.10`, and `net 10.0.0.0/8`.
 
-`--watch-ip`, doğrulanmış IP adresini BPF filtresine güvenli biçimde ekler; örneğin `--filter "tcp port 80" --watch-ip 192.168.1.42` ifadesi `(tcp port 80) and host 192.168.1.42` olur. `--protocol` ise ayrıştırma sonrasında `HTTP,DNS,TLS,TCP,UDP,ICMP,ICMPv6,ARP,MALFORMED` değerleriyle görünümü daraltır.
+`--watch-ip` safely adds a validated IP address to the BPF filter. For example, `--filter "tcp port 80" --watch-ip 192.168.1.42` becomes `(tcp port 80) and host 192.168.1.42`. After packet parsing, `--protocol` narrows the displayed results to a comma-separated set of `HTTP`, `DNS`, `TLS`, `TCP`, `UDP`, `ICMP`, `ICMPv6`, `ARP`, and `MALFORMED`.
 
-## HTTP ve anomali görünümü
+## HTTP and anomaly inspection
 
-netwatch, tek TCP segmentinde tam başlığı bulunan şifresiz HTTP/1.x istek ve yanıtlarını çözümler. Metot, hedef, Host, durum kodu ve başlıklar JSONL/Markdown çıktısına eklenir. `Authorization`, `Cookie`, `Set-Cookie`, `Proxy-Authorization`, `X-Api-Key` ve `X-Auth-Token` değerleri her zaman `[REDACTED]` olarak yazılır. Gövde kaydı varsayılan olarak kapalıdır ve yalnızca `--include-http-body` ile açılır. TLS içeriği çözülmez.
+netwatch parses unencrypted HTTP/1.x requests and responses when the complete header is available in a single TCP segment. The method, target, host, status code, and headers are included in JSONL and Markdown output. Values for `Authorization`, `Cookie`, `Set-Cookie`, `Proxy-Authorization`, `X-Api-Key`, and `X-Auth-Token` are always written as `[REDACTED]`. HTTP body recording is disabled by default and must be explicitly enabled with `--include-http-body`. TLS payloads are not decrypted.
 
-İzlenen cihaz için aşağıdaki deterministik işaretler üretilir:
+The following deterministic indicators are generated for a monitored device:
 
-- TCP RST ile ani bağlantı sonlandırma.
-- HTTP 4xx ve 5xx yanıtları.
-- Şifresiz HTTP üzerinde kimlik bilgisi taşıyabilen başlık.
-- 10 saniyede 500 paketlik trafik sıçraması.
-- İzlenen cihazdan 60 saniyede 12 farklı hedef porta giden SYN trafiği.
+- Abrupt connection termination with TCP RST.
+- HTTP 4xx and 5xx responses.
+- Credential-bearing headers sent over unencrypted HTTP.
+- A traffic spike of 500 packets within 10 seconds.
+- SYN traffic from the monitored device to 12 distinct destination ports within 60 seconds.
 
-Bunlar tanılama ipuçlarıdır; tek başına saldırı veya arıza kanıtı sayılmaz.
+These indicators are diagnostic hints, not proof of an attack or malfunction.
 
-## AI agent oturumu
+## AI agent sessions
 
-`--agent-session <klasör>` canlı yakalama sırasında dört kararlı dosya üretir:
+`--agent-session <directory>` creates four stable files during a live capture:
 
-| Dosya | Amaç |
+| File | Purpose |
 |---|---|
-| `session.json` | Filtre, arayüz, izlenen IP ve gizlilik metadata'sı |
-| `events.jsonl` | Satır başına bir paket olayı; canlı olarak takip edilebilir |
-| `traffic.md` | İnsan ve agent tarafından okunabilir ayrıntılı trafik günlüğü |
-| `summary.json` | Yakalama kapanınca protokol/anomali sayaçları |
+| `session.json` | Capture filter, interface, monitored IP, and privacy metadata |
+| `events.jsonl` | One packet event per line, suitable for live following |
+| `traffic.md` | A detailed traffic log readable by people and agents |
+| `summary.json` | Protocol and anomaly counters written when the capture ends |
 
-Oturum klasörü yeni veya boş olmalıdır; mevcut bir oturumun üzerine yazılmaz. Ham paket baytları JSONL veya Markdown'a konmaz; gerekiyorsa ayrıca `--save capture.pcap` kullanılır. Agent entegrasyon sözleşmesi ve örnek komutlar için [docs/AI_AGENT_GUIDE.md](docs/AI_AGENT_GUIDE.md) dosyasına bakın.
+The session directory must be new or empty; netwatch never overwrites an existing session. Raw packet bytes are not included in JSONL or Markdown output. Use `--save capture.pcap` when a raw capture is also required. See [docs/AI_AGENT_GUIDE.md](docs/AI_AGENT_GUIDE.md) for the agent integration contract and command examples.
 
-## Terminal görünümü
+## Terminal view
 
 ```text
- No   Zaman            Kaynak IP:Port          Hedef IP:Port          Protokol  Uzunluk  Bilgi
+ No   Time             Source IP:Port          Destination IP:Port     Protocol  Length  Details
  41   14:32:08.113245  192.0.2.25:53341        1.1.1.1:53             DNS            74  Query A example.com
  42   14:32:08.127911  192.0.2.25:53342        203.0.113.10:443       TCP            66  [SYN] Seq=...
  43   14:32:08.141220  192.0.2.25:53342        203.0.113.10:443       TLS           517  Client Hello (SNI: example.com)
  44   14:32:08.152330  192.0.2.25:53343        192.0.2.50:80          HTTP          231  POST http://prototype.local/api/state
 ```
 
-## Npcap neden gerekli?
+## Why is Npcap required?
 
-Windows, genel amaçlı kullanıcı uygulamalarına bütün bağlantı katmanı paketlerini doğrudan sunmaz. Npcap imzalı bir Windows sürücüsü ve libpcap uyumlu API sağlayarak BPF filtreleme, loopback yakalama ve pcap uyumluluğunu mümkün kılar. netwatch karışık modu varsayılan olarak kullanmaz.
+Windows does not expose all link-layer packets directly to general-purpose user applications. Npcap provides a signed Windows driver and a libpcap-compatible API, enabling BPF filtering, loopback capture, and pcap compatibility. netwatch does not enable promiscuous mode by default.
 
-`--mode etw` yolu gelecekte sürücüsüz metadata yakalama için ayrılmıştır. Mevcut önizlemede arayüz keşfi çalışır; canlı ham paket görünümü için `--mode npcap` gerekir.
+The `--mode etw` path is reserved for future driverless metadata capture. Interface discovery works in the current preview, but live raw packet inspection requires `--mode npcap`.
 
-## Kaynaktan derleme
+## Building from source
 
-Gereksinimler: .NET 8 SDK ve canlı yakalama için Npcap.
+Requirements: the .NET 8 SDK and Npcap for live capture.
 
 ```powershell
 dotnet restore NetWatch.sln
@@ -129,29 +129,29 @@ dotnet run --project src/NetWatch.Console -- --list-interfaces
 dotnet publish src/NetWatch.Console -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
 ```
 
-Mimari ayrıntılar için [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) dosyasına bakın.
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for architectural details.
 
-## Yayınlama
+## Releasing
 
-Sürümler yerel olarak derlenir ve doğrulanır:
+Build and validate releases locally:
 
 ```powershell
 .\scripts\Build-Release.ps1
 ```
 
-Betik proje sürümünü okur; restore, Release testleri ve self-contained yayın komutlarını yürütür. Oluşan uygulamanın sürümünü ve belgelenen komut satırı seçeneklerini doğruladıktan sonra `artifacts/v<version>/netwatch.exe` ile `netwatch.exe.sha256` dosyalarını üretir. Aynı sürüm klasörünün üzerine yazmak için `-Force` açıkça verilmelidir.
+The script reads the project version, restores dependencies, runs the Release test suite, and publishes a self-contained executable. It then verifies the executable version and documented CLI options before producing `artifacts/v<version>/netwatch.exe` and `netwatch.exe.sha256`. Pass `-Force` explicitly to replace an existing directory for the same version.
 
-Bu iki dosya, eşleşen `v<version>` etiketi oluşturulduktan sonra GitHub Release'e manuel olarak yüklenir. Bu depoda GitHub Actions kullanılmaz.
+After creating the matching `v<version>` tag, upload both files manually to the GitHub release. This repository does not use GitHub Actions.
 
-## Katkı sağlama
+## Contributing
 
-1. Küçük ve tek amaçlı bir dal açın.
-2. Davranış değişiklikleri için test ekleyin.
-3. `dotnet test NetWatch.sln -c Release` komutunun geçtiğini doğrulayın.
-4. Değişikliğin güvenlik ve gizlilik etkisini pull request açıklamasında belirtin.
+1. Create a small, single-purpose branch.
+2. Add tests for behavioral changes.
+3. Verify that `dotnet test NetWatch.sln -c Release` passes.
+4. Document security and privacy implications in the pull request description.
 
-Paket yakalama kodunda varsayılan izinleri genişleten, kullanıcı onayını atlayan veya yakalanan veriyi ağ üzerinden gönderen değişiklikler kabul edilmez.
+Changes to packet capture code must not silently broaden default permissions, bypass user consent, or transmit captured data over the network.
 
-## Lisanslar
+## Licenses
 
-netwatch MIT lisanslıdır. SharpPcap MIT, PacketDotNet MPL-2.0 ve Spectre.Console MIT lisanslıdır. Npcap ayrı bir üründür ve kendi kullanım/dağıtım lisansına tabidir; bu depo Npcap ikilisini barındırmaz.
+netwatch is licensed under the MIT License. SharpPcap uses the MIT License, PacketDotNet uses MPL-2.0, and Spectre.Console uses the MIT License. Npcap is a separate product governed by its own license; this repository does not distribute Npcap binaries.
