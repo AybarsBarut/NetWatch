@@ -19,6 +19,30 @@ var watchIpOption = new Option<string?>("--watch-ip")
 {
     Description = "Yalnızca belirtilen IPv4/IPv6 adresine ait trafiği yakalar ve anomali analizini bu cihaza odaklar"
 };
+var peerIpOption = new Option<string?>("--peer-ip")
+{
+    Description = "--watch-ip ile birlikte yalnızca iki IP arasındaki karşılıklı trafiği yakalar"
+};
+var sourceIpOption = new Option<string?>("--source-ip")
+{
+    Description = "Yalnızca belirtilen IPv4/IPv6 adresinden çıkan trafiği yakalar"
+};
+var destinationIpOption = new Option<string?>("--destination-ip")
+{
+    Description = "Yalnızca belirtilen IPv4/IPv6 adresine giden trafiği yakalar"
+};
+var portOption = new Option<int?>("--port")
+{
+    Description = "Kaynak veya hedef portuna göre trafiği daraltır (1-65535)"
+};
+portOption.Validators.Add(result =>
+{
+    var value = result.GetValueOrDefault<int?>();
+    if (value.HasValue && value.Value is < 1 or > 65_535)
+    {
+        result.AddError("--port 1 ile 65535 arasında olmalıdır.");
+    }
+});
 var protocolOption = new Option<string?>("--protocol")
 {
     Description = "Görüntülenecek protokoller, virgülle ayrılır (ör. HTTP,DNS,TLS)"
@@ -94,6 +118,10 @@ rootCommand.Options.Add(listOption);
 rootCommand.Options.Add(interfaceOption);
 rootCommand.Options.Add(filterOption);
 rootCommand.Options.Add(watchIpOption);
+rootCommand.Options.Add(peerIpOption);
+rootCommand.Options.Add(sourceIpOption);
+rootCommand.Options.Add(destinationIpOption);
+rootCommand.Options.Add(portOption);
 rootCommand.Options.Add(protocolOption);
 rootCommand.Options.Add(saveOption);
 rootCommand.Options.Add(markdownLogOption);
@@ -128,6 +156,10 @@ rootCommand.SetAction(async (parseResult, cancellationToken) =>
         parseResult.GetValue(interfaceOption),
         parseResult.GetValue(filterOption),
         parseResult.GetValue(watchIpOption),
+        parseResult.GetValue(peerIpOption),
+        parseResult.GetValue(sourceIpOption),
+        parseResult.GetValue(destinationIpOption),
+        parseResult.GetValue(portOption),
         parseResult.GetValue(protocolOption),
         parseResult.GetValue(saveOption),
         parseResult.GetValue(markdownLogOption),

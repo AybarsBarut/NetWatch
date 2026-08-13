@@ -18,6 +18,18 @@ internal static class NetWatchApplication
                 throw new ArgumentException("--plain ve --jsonl birlikte kullanılamaz.");
             }
 
+            var watchedIp = NormalizeIpAddress(appOptions.WatchIp, "--watch-ip");
+            var peerIp = NormalizeIpAddress(appOptions.PeerIp, "--peer-ip");
+            var sourceIp = NormalizeIpAddress(appOptions.SourceIp, "--source-ip");
+            var destinationIp = NormalizeIpAddress(appOptions.DestinationIp, "--destination-ip");
+            var filter = BpfFilter.Build(
+                appOptions.Filter,
+                watchedIp,
+                peerIp,
+                sourceIp,
+                destinationIp,
+                appOptions.Port);
+
             await using var provider = CreateProvider(appOptions.Mode);
             var interfaces = provider.GetInterfaces();
 
@@ -34,17 +46,6 @@ internal static class NetWatchApplication
             }
 
             var selected = SelectInterface(interfaces, appOptions.Interface);
-            string? watchedIp = null;
-            if (!string.IsNullOrWhiteSpace(appOptions.WatchIp))
-            {
-                if (!IPAddress.TryParse(appOptions.WatchIp, out var parsedWatchedIp))
-                {
-                    throw new ArgumentException("--watch-ip geçerli bir IPv4 veya IPv6 adresi olmalıdır.");
-                }
-
-                watchedIp = parsedWatchedIp.ToString();
-            }
-            var filter = BpfFilter.CombineWithHost(appOptions.Filter, watchedIp);
             var captureOptions = new CaptureOptions(selected.Id, filter, appOptions.Promiscuous);
             var trafficFilter = new TrafficFilter(appOptions.Protocols);
 
@@ -82,6 +83,10 @@ internal static class NetWatchApplication
                     selected.Description,
                     filter,
                     watchedIp,
+                    peerIp,
+                    sourceIp,
+                    destinationIp,
+                    appOptions.Port,
                     appOptions.Protocols,
                     appOptions.IncludeHttpBody,
                     "Bu dosyalar ağ uç noktaları ve şifresiz uygulama verileri içerebilir. Yalnızca yetkili tanılama kapsamında paylaşın.");
@@ -171,6 +176,21 @@ internal static class NetWatchApplication
         "etw" => new EtwCaptureProvider(),
         _ => throw new ArgumentException("--mode yalnızca 'npcap' veya 'etw' olabilir.", nameof(mode))
     };
+
+    private static string? NormalizeIpAddress(string? address, string optionName)
+    {
+        if (string.IsNullOrWhiteSpace(address))
+        {
+            return null;
+        }
+
+        if (!IPAddress.TryParse(address, out var parsedAddress))
+        {
+            throw new ArgumentException($"{optionName} geçerli bir IPv4 veya IPv6 adresi olmalıdır.");
+        }
+
+        return parsedAddress.ToString();
+    }
 
     private static CaptureInterface SelectInterface(
         IReadOnlyList<CaptureInterface> interfaces,

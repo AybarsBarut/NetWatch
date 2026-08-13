@@ -5,21 +5,79 @@ namespace NetWatch.Core.Capture;
 
 public static partial class BpfFilter
 {
-    public static string? CombineWithHost(string? filter, string? address)
+    public static string? Build(
+        string? filter,
+        string? watchIp,
+        string? peerIp,
+        string? sourceIp,
+        string? destinationIp,
+        int? port)
     {
         var normalized = Normalize(filter);
-        if (string.IsNullOrWhiteSpace(address))
+        var watchedAddress = ParseAddress(watchIp, "--watch-ip");
+        var peerAddress = ParseAddress(peerIp, "--peer-ip");
+        var sourceAddress = ParseAddress(sourceIp, "--source-ip");
+        var destinationAddress = ParseAddress(destinationIp, "--destination-ip");
+
+        if (peerAddress is not null && watchedAddress is null)
         {
-            return normalized;
+            throw new ArgumentException("--peer-ip yalnızca --watch-ip ile birlikte kullanılabilir.");
         }
 
-        if (!IPAddress.TryParse(address, out var parsedAddress))
+        if (peerAddress is not null && peerAddress.Equals(watchedAddress))
         {
-            throw new ArgumentException("--watch-ip geçerli bir IPv4 veya IPv6 adresi olmalıdır.", nameof(address));
+            throw new ArgumentException("--watch-ip ve --peer-ip farklı adresler olmalıdır.");
         }
 
-        var hostFilter = $"host {parsedAddress}";
-        return normalized is null ? hostFilter : $"({normalized}) and {hostFilter}";
+        if (watchedAddress is not null && (sourceAddress is not null || destinationAddress is not null))
+        {
+            throw new ArgumentException(
+                "--watch-ip/--peer-ip ile --source-ip/--destination-ip birlikte kullanılamaz.");
+        }
+
+        if (port is < 1 or > 65_535)
+        {
+            throw new ArgumentException("--port 1 ile 65535 arasında olmalıdır.");
+        }
+
+        var clauses = new List<string>();
+        var hasScope = watchedAddress is not null || sourceAddress is not null ||
+            destinationAddress is not null || port is not null;
+        if (normalized is not null)
+        {
+            clauses.Add(hasScope ? $"({normalized})" : normalized);
+        }
+
+        if (watchedAddress is not null && peerAddress is not null)
+        {
+            clauses.Add($"(host {watchedAddress} and host {peerAddress})");
+        }
+        else if (watchedAddress is not null)
+        {
+            clauses.Add($"host {watchedAddress}");
+        }
+
+        if (sourceAddress is not null)
+        {
+            clauses.Add($"src host {sourceAddress}");
+        }
+
+        if (destinationAddress is not null)
+        {
+            clauses.Add($"dst host {destinationAddress}");
+        }
+
+        if (port is not null)
+        {
+            clauses.Add($"port {port.Value}");
+        }
+
+        return clauses.Count == 0 ? null : string.Join(" and ", clauses);
+    }
+
+    public static string? CombineWithHost(string? filter, string? address)
+    {
+        return Build(filter, address, null, null, null, null);
     }
 
     public static string? Normalize(string? filter)
@@ -41,6 +99,21 @@ public static partial class BpfFilter
         }
 
         return normalized;
+    }
+
+    private static IPAddress? ParseAddress(string? address, string optionName)
+    {
+        if (string.IsNullOrWhiteSpace(address))
+        {
+            return null;
+        }
+
+        if (!IPAddress.TryParse(address, out var parsedAddress))
+        {
+            throw new ArgumentException($"{optionName} geçerli bir IPv4 veya IPv6 adresi olmalıdır.");
+        }
+
+        return parsedAddress;
     }
 
     [GeneratedRegex(@"\s+")]

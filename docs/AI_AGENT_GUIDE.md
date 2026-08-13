@@ -8,6 +8,7 @@ Bu belge, bir geliştiricinin sahibi olduğu veya açıkça yetkilendirildiği a
 netwatch `
   --interface 1 `
   --watch-ip 192.168.1.42 `
+  --peer-ip 192.168.1.50 `
   --filter "tcp or udp" `
   --agent-session .\netwatch-sessions\prototype-01 `
   --plain
@@ -20,6 +21,22 @@ Agent şu sırayla çalışabilir:
 3. `protocol`, `http.method`, `http.target`, `http.statusCode` ve `anomalies[].code` alanlarıyla filtreleme yapar.
 4. İnsanla ortak inceleme için aynı olayların `traffic.md` karşılığını kullanır.
 5. Kullanıcı yakalamayı kapattığında `summary.json` sayaçlarını okur.
+
+## Trafik kapsamı
+
+İki cihaz yalnızca birbirleriyle iletişim kurduğunda olay üretmek için çift yönlü peer filtresi kullanılabilir:
+
+```powershell
+netwatch --watch-ip 192.168.1.42 --peer-ip 192.168.1.50 --agent-session .\netwatch-sessions\pair-01 --plain
+```
+
+Tek yönlü bir akış için kaynak ve hedef ayrı ayrı belirtilir:
+
+```powershell
+netwatch --source-ip 192.168.1.42 --destination-ip 192.168.1.50 --port 443 --jsonl
+```
+
+`--peer-ip`, `--watch-ip` gerektirir. Peer modu çift yönlüdür; `--source-ip` ve `--destination-ip` ise yönlüdür ve bu iki mod birlikte kullanılamaz. `--port` ve özel `--filter` her iki moda da eklenebilir. Seçilen kapsam `session.json` içinde ayrı alanlarla ve oluşturulan BPF ifadesiyle kaydedilir.
 
 ## JSONL olay şeması
 

@@ -13,8 +13,9 @@ public sealed class AgentSessionWriterTests
         {
             var startedAt = DateTimeOffset.UtcNow;
             var metadata = new CaptureSessionMetadata(
-                "1.0", startedAt, "test", "if-1", "Test interface", "host 192.0.2.10",
-                "192.0.2.10", "HTTP", false, "test notice");
+                "1.0", startedAt, "test", "if-1", "Test interface",
+                "(host 192.0.2.10 and host 198.51.100.20) and port 80",
+                "192.0.2.10", "198.51.100.20", null, null, 80, "HTTP", false, "test notice");
             await using (var writer = new AgentSessionWriter(directory, metadata))
             {
                 var packet = new PacketInfo(
@@ -29,6 +30,9 @@ public sealed class AgentSessionWriterTests
             Assert.Contains("\"protocol\":\"HTTP\"", eventLines[0]);
             Assert.DoesNotContain("rawData", eventLines[0], StringComparison.OrdinalIgnoreCase);
             Assert.True(File.Exists(Path.Combine(directory, "session.json")));
+            var session = await File.ReadAllTextAsync(Path.Combine(directory, "session.json"));
+            Assert.Contains("\"peerIp\":\"198.51.100.20\"", session);
+            Assert.Contains("\"port\":80", session);
             Assert.True(File.Exists(Path.Combine(directory, "summary.json")));
             Assert.Contains("# NetWatch trafik günlüğü", await File.ReadAllTextAsync(Path.Combine(directory, "traffic.md")));
         }

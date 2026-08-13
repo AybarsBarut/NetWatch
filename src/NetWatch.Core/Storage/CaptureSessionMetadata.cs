@@ -8,6 +8,10 @@ public sealed record CaptureSessionMetadata(
     string InterfaceDescription,
     string? CaptureFilter,
     string? WatchedIp,
+    string? PeerIp,
+    string? SourceIp,
+    string? DestinationIp,
+    int? Port,
     string? ProtocolFilter,
     bool IncludesHttpBody,
     string PrivacyNotice);

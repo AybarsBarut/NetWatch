@@ -44,7 +44,9 @@ Uygulama TLS içeriğini çözmez ve anahtar materyali toplamaz.
 ## Güven sınırları
 
 - BPF ifadeleri shell'e gönderilmez; doğrudan libpcap derleyicisine atanır.
-- `--watch-ip` yalnızca `IPAddress.TryParse` ile doğrulanan adreslerden BPF `host` ifadesi üretir.
+- `--watch-ip`, `--peer-ip`, `--source-ip` ve `--destination-ip` yalnızca `IPAddress.TryParse` ile doğrulanan adreslerden BPF `host`, `src host` ve `dst host` ifadeleri üretir.
+- `--watch-ip A --peer-ip B`, yalnızca A ile B arasındaki çift yönlü trafiği yakalamak için `host A and host B` üretir; yönlü `--source-ip`/`--destination-ip` moduyla birlikte kullanılamaz.
+- `--port` 1-65535 aralığında doğrulanır ve oluşturulan BPF kapsamına `port N` olarak eklenir.
 - Hassas HTTP kimlik başlıkları tüm yapılandırılmış ve Markdown çıktılarda koşulsuz maskelenir; gövde önizlemesi açık onay gerektirir.
 - Kurulum, yayın ikilisini SHA256 dosyasıyla doğrular.
 - Npcap kurucusu yalnızca resmi HTTPS adresinden alınır ve Authenticode imzası kontrol edilir.

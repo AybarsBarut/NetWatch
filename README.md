@@ -50,6 +50,12 @@ netwatch --filter "host 8.8.8.8" --save capture.pcap
 # Monitor a prototype device, filter HTTP traffic, and write a Markdown log
 netwatch --watch-ip 192.168.1.42 --protocol HTTP --markdown-log prototype-debug.md --plain
 
+# Show only traffic exchanged directly between two devices
+netwatch --watch-ip 192.168.1.42 --peer-ip 192.168.1.50 --plain
+
+# Show only traffic from one device to another on port 443
+netwatch --source-ip 192.168.1.42 --destination-ip 192.168.1.50 --port 443 --plain
+
 # Create a diagnostics session that an AI agent can follow live
 netwatch --watch-ip 192.168.1.42 --agent-session netwatch-sessions/prototype-01 --plain
 
@@ -73,7 +79,9 @@ Update checks use the latest published release from the canonical GitHub reposit
 
 Press `Ctrl+C` to stop a capture. BPF expressions are compiled by libpcap. Examples include `tcp`, `udp port 53`, `host 192.0.2.10`, and `net 10.0.0.0/8`.
 
-`--watch-ip` safely adds a validated IP address to the BPF filter. For example, `--filter "tcp port 80" --watch-ip 192.168.1.42` becomes `(tcp port 80) and host 192.168.1.42`. After packet parsing, `--protocol` narrows the displayed results to a comma-separated set of `HTTP`, `DNS`, `TLS`, `TCP`, `UDP`, `ICMP`, `ICMPv6`, `ARP`, and `MALFORMED`.
+`--watch-ip` safely adds a validated IP address to the BPF filter. Add `--peer-ip` to keep only packets exchanged directly between the watched device and one peer, in both directions. For one-way analysis, use `--source-ip`, `--destination-ip`, or both. `--port` limits the capture to packets whose source or destination matches the requested port. Peer mode and directional mode are intentionally mutually exclusive, while all scope options can be combined with a custom `--filter` and the post-capture `--protocol` filter.
+
+For example, `--filter "tcp" --watch-ip 192.168.1.42 --peer-ip 192.168.1.50 --port 443` becomes `(tcp) and (host 192.168.1.42 and host 192.168.1.50) and port 443`. IP addresses and port ranges are validated before they are added to BPF expressions. After packet parsing, `--protocol` narrows displayed results to a comma-separated set of `HTTP`, `DNS`, `TLS`, `TCP`, `UDP`, `ICMP`, `ICMPv6`, `ARP`, and `MALFORMED`.
 
 ## HTTP and anomaly inspection
 
@@ -95,7 +103,7 @@ These indicators are diagnostic hints, not proof of an attack or malfunction.
 
 | File | Purpose |
 |---|---|
-| `session.json` | Capture filter, interface, monitored IP, and privacy metadata |
+| `session.json` | Capture filter, interface, monitored/peer/directional IP scope, port, and privacy metadata |
 | `events.jsonl` | One packet event per line, suitable for live following |
 | `traffic.md` | A detailed traffic log readable by people and agents |
 | `summary.json` | Protocol and anomaly counters written when the capture ends |
@@ -139,9 +147,14 @@ Build and validate releases locally:
 .\scripts\Build-Release.ps1
 ```
 
-The script reads the project version, restores dependencies, runs the Release test suite, and publishes a self-contained executable. It then verifies the executable version and documented CLI options before producing `artifacts/v<version>/netwatch.exe` and `netwatch.exe.sha256`. Pass `-Force` explicitly to replace an existing directory for the same version.
+The script reads the project version, restores dependencies, runs the Release test suite, and publishes a self-contained executable. It then verifies the executable version and documented CLI options before producing the following files under `artifacts/v<version>/`:
 
-After creating the matching `v<version>` tag, upload both files manually to the GitHub release. This repository does not use GitHub Actions.
+- `netwatch.exe` and `netwatch.exe.sha256` for the installer and self-update flow.
+- `netwatch-v<version>-win-x64.zip` and its `.sha256` file for manual downloads.
+
+Pass `-Force` explicitly to replace an existing directory for the same version.
+
+After creating the matching `v<version>` tag, upload all four files manually to the GitHub release. This repository does not use GitHub Actions.
 
 ## Contributing
 

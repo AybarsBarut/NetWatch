@@ -84,6 +84,10 @@ try {
 
     $RequiredOptions = @(
         '--watch-ip',
+        '--peer-ip',
+        '--source-ip',
+        '--destination-ip',
+        '--port',
         '--protocol',
         '--markdown-log',
         '--agent-session',
@@ -106,10 +110,22 @@ try {
     $ChecksumPath = Join-Path $ReleaseDirectory 'netwatch.exe.sha256'
     [IO.File]::WriteAllText($ChecksumPath, "$Hash  netwatch.exe`n", [Text.Encoding]::ASCII)
 
+    $ArchiveName = "netwatch-v$Version-$Runtime.zip"
+    $ArchivePath = Join-Path $ReleaseDirectory $ArchiveName
+    Compress-Archive -LiteralPath $ReleaseExecutablePath, $ChecksumPath -DestinationPath $ArchivePath
+    $ArchiveHash = (Get-FileHash -LiteralPath $ArchivePath -Algorithm SHA256).Hash.ToLowerInvariant()
+    $ArchiveChecksumPath = "$ArchivePath.sha256"
+    [IO.File]::WriteAllText(
+        $ArchiveChecksumPath,
+        "$ArchiveHash  $ArchiveName`n",
+        [Text.Encoding]::ASCII)
+
     Write-Host ''
     Write-Host "NetWatch v$Version yayın paketi doğrulandı." -ForegroundColor Green
     Write-Host "  $ReleaseExecutablePath"
     Write-Host "  $ChecksumPath"
+    Write-Host "  $ArchivePath"
+    Write-Host "  $ArchiveChecksumPath"
 }
 finally {
     Remove-Item -LiteralPath $StagingDirectory -Recurse -Force -ErrorAction SilentlyContinue
