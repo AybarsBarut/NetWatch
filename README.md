@@ -25,7 +25,7 @@ NetWatch, hızlı terminal tanılaması için tasarlanmıştır; Wireshark'ın b
 PowerShell'i açın ve çalıştırın:
 
 ```powershell
-irm https://github.com/AybarsBarut/WireSniffer/raw/refs/heads/main/install.ps1 | iex
+irm https://github.com/AybarsBarut/NetWatch/raw/refs/heads/main/install.ps1 | iex
 ```
 
 Kurucu Npcap yoksa açık onayınızdan sonra resmi ve imzalı Npcap kurucusunu çalıştırır; yalnızca sürücü kurulumu sırasında Windows yönetici izni isteyebilir. Son yayın ikilisinin SHA256 değerini doğrular ve NetWatch'ı kullanıcı PATH'inize ekler.
